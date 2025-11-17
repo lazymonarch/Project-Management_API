@@ -1,0 +1,128 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2025-11-15T00:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v2024.5.0",
+  "resources": [
+    {
+      "_id": "env_project_management",
+      "_type": "environment",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:8000",
+        "access_token": "",
+        "refresh_token": "",
+        "session_id": ""
+      }
+    },
+
+    {
+      "_id": "workspace_project_management",
+      "_type": "workspace",
+      "name": "Project Management API",
+      "scope": "collection"
+    },
+
+    {
+      "_id": "req_register_user",
+      "_type": "request",
+      "parentId": "workspace_project_management",
+      "name": "Register User",
+      "method": "POST",
+      "url": "{{ base_url }}/auth/register",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"test@example.com\",\n  \"username\": \"test\",\n  \"full_name\": \"Test User\",\n  \"password\": \"password123\",\n  \"role\": \"admin\"\n}"
+      }
+    },
+
+    {
+      "_id": "req_login_user",
+      "_type": "request",
+      "parentId": "workspace_project_management",
+      "name": "Login",
+      "method": "POST",
+      "url": "{{ base_url }}/auth/login",
+      "body": {
+        "mimeType": "application/x-www-form-urlencoded",
+        "params": [
+          { "name": "username", "value": "test@example.com" },
+          { "name": "password", "value": "password123" }
+        ]
+      },
+      "afterResponseScript": "const body = JSON.parse(response.getBody());\n\ninsomnia.environment.set(\"access_token\", body.access_token);\ninsomnia.environment.set(\"refresh_token\", body.refresh_token);\ninsomnia.environment.set(\"session_id\", body.session_id);"
+    },
+
+    {
+      "_id": "req_get_me",
+      "_type": "request",
+      "parentId": "workspace_project_management",
+      "name": "Get Me",
+      "method": "GET",
+      "url": "{{ base_url }}/auth/me",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ access_token }}"
+        }
+      ]
+    },
+
+    {
+      "_id": "req_refresh_token",
+      "_type": "request",
+      "parentId": "workspace_project_management",
+      "name": "Refresh Token",
+      "method": "POST",
+      "url": "{{ base_url }}/auth/refresh",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"session_id\": \"{{ session_id }}\",\n  \"refresh_token\": \"{{ refresh_token }}\"\n}"
+      },
+      "afterResponseScript": "const body = JSON.parse(response.getBody());\n\ninsomnia.environment.set(\"access_token\", body.access_token);\ninsomnia.environment.set(\"refresh_token\", body.refresh_token);\ninsomnia.environment.set(\"session_id\", body.session_id);"
+    },
+
+    {
+      "_id": "req_logout",
+      "_type": "request",
+      "parentId": "workspace_project_management",
+      "name": "Logout (Single Session)",
+      "method": "POST",
+      "url": "{{ base_url }}/auth/logout",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"session_id\": \"{{ session_id }}\"\n}"
+      }
+    },
+
+    {
+      "_id": "req_logout_all",
+      "_type": "request",
+      "parentId": "workspace_project_management",
+      "name": "Logout All Sessions",
+      "method": "POST",
+      "url": "{{ base_url }}/auth/logout_all",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ access_token }}"
+        }
+      ]
+    },
+
+    {
+      "_id": "req_list_sessions",
+      "_type": "request",
+      "parentId": "workspace_project_management",
+      "name": "List Sessions",
+      "method": "GET",
+      "url": "{{ base_url }}/auth/sessions",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ access_token }}"
+        }
+      ]
+    }
+  ]
+}
