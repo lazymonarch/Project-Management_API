@@ -1,0 +1,7 @@
+{
+  "python.defaultInterpreterPath": "project-management-api/venv/bin/python",
+  "python.analysis.extraPaths": [
+    "project-management-api",
+    "project-management-api/app"
+  ]
+}
