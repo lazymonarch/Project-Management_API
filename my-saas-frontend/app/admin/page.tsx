@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { logout } from "@/lib/auth";
 import { ProtectedClientWrapper } from "@/components/ProtectedClientWrapper";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -13,46 +15,57 @@ export default function AdminPage() {
   };
 
   return (
-    <ProtectedClientWrapper requiredRole="admin" loadingLabel="Loading admin panel...">
+    <ProtectedClientWrapper
+      requiredRole="admin"
+      loadingLabel="Loading admin panel..."
+    >
       {({ user }) => (
-        <div className="space-y-8">
+        <div className="space-y-10">
+          {/* Header */}
           <div>
-            <p className="text-sm uppercase font-semibold tracking-wide text-slate-500">
-              ADMIN PANEL
+            <p className="text-xs uppercase font-semibold tracking-wide text-slate-500">
+              Admin Panel
             </p>
-            <h1 className="text-3xl font-bold text-slate-900">
+
+            <h1 className="text-4xl font-bold text-slate-900 mt-1">
               Welcome, {user.full_name || user.email}
             </h1>
-            <p className="text-slate-500 mt-1">Role: {user.role}</p>
+
+            <p className="text-slate-500 mt-1">
+              Role: <span className="font-medium">{user.role}</span>
+            </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-6">
-            <p className="text-lg font-semibold text-slate-900">
+          {/* Admin Controls */}
+          <Card className="p-8 shadow-sm space-y-8">
+            <p className="text-xl font-semibold text-slate-900">
               Admin Controls
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-              <button
-                className="btn-primary"
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Button
+                className="h-14 text-lg rounded-xl"
                 onClick={() => router.push("/admin/users")}
               >
                 Manage Users
-              </button>
+              </Button>
 
-              <button
-                className="btn-primary"
+              <Button
+                className="h-14 text-lg rounded-xl"
                 onClick={() => router.push("/admin/projects")}
               >
                 Manage Projects
-              </button>
-
+              </Button>
             </div>
 
-            <button className="btn mt-4" onClick={handleLogout}>
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={handleLogout}
+            >
               Logout
-            </button>
-          </div>
+            </Button>
+          </Card>
         </div>
       )}
     </ProtectedClientWrapper>
