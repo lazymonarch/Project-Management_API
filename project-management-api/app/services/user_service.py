@@ -7,7 +7,9 @@ from uuid import uuid4
 from datetime import datetime
 
 from app.models.user import User
-from app.schemas.user import UserCreate
+# ✅ IMPORT THE NEW UserRegister SCHEMA (and UserRole)
+from app.schemas.user import UserCreate, UserRegister
+from app.models.enums import UserRole 
 from app.utils.auth import (
     hash_password,
     verify_password,
@@ -19,8 +21,43 @@ from app.utils.pagination import paginate, build_pagination_metadata
 
 class UserService:
 
+    # ✅ ADD THIS NEW METHOD FOR PUBLIC REGISTRATION
+    @staticmethod
+    async def register_user(db: AsyncSession, user_data: UserRegister):
+        """
+        Handles public registration.
+        Validates email/username and sets default role.
+        """
+        # Check unique email
+        result = await db.execute(select(User).where(User.email == user_data.email))
+        if result.scalar_one_or_none():
+            raise HTTPException(status_code=409, detail="Email already registered")
+
+        # Check unique username
+        result = await db.execute(select(User).where(User.username == user_data.username))
+        if result.scalar_one_or_none():
+            raise HTTPException(status_code=409, detail="Username already taken")
+
+        # Create new user
+        new_user = User(
+            id=uuid4(), # Ensure ID is generated here
+            email=user_data.email,
+            username=user_data.username,
+            full_name=user_data.full_name,
+            password_hash=hash_password(user_data.password),
+            role=UserRole.developer  # Hard-code the default role
+        )
+
+        db.add(new_user)
+        await db.commit()
+        await db.refresh(new_user)
+        return new_user
+
     @staticmethod
     async def create_user(db: AsyncSession, user_data: UserCreate):
+        """
+        Handles user creation by an admin.
+        """
         # Check unique email
         result = await db.execute(select(User).where(User.email == user_data.email))
         if result.scalar_one_or_none():
@@ -92,6 +129,8 @@ class UserService:
             "token_type": "bearer"
         }
 
+    # ... (rest of the service file: get_users, list_users, etc.) ...
+    
     @staticmethod
     async def get_users(db, page: int, limit: int):
         skip, limit = paginate(page, limit)

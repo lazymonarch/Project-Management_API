@@ -35,7 +35,8 @@ export async function register(payload: {
   username: string;
   email: string;
   password: string;
-}): Promise<AuthTokens & { user: StoredUser }> {
+  // ✅ FIX: Changed return type to Promise<void>
+}): Promise<void> {
   const res = await fetch(`${API_BASE_URL}/api/v1/auth/register`, {
     method: "POST",
     credentials: "include",
@@ -51,19 +52,27 @@ export async function register(payload: {
   });
 
   if (!res.ok) {
-    console.error("REGISTER ERROR:", await res.text());
-    throw new Error("Registration failed");
+    // Try to parse the backend error message
+    try {
+      const errorData = await res.json();
+      throw new Error(errorData.detail || "Registration failed");
+    } catch {
+      // Fallback if error isn't JSON
+      throw new Error("Registration failed");
+    }
   }
 
-  const json = await res.json();
-  const tokens = json.data;
+  // ✅ FIX: Registration is successful, but we don't store tokens.
+  // The backend now returns { message: "...", data: null }
+  // We can just return successfully, as no tokens are provided.
 
-  storeTokens(tokens);
-
-  const user = await fetchUserProfile();
-  storeTokens(tokens, user);
-
-  return { ...tokens, user };
+  // ‼️ REMOVED all token-storing and user-fetching logic from here.
+  // const json = await res.json();
+  // const tokens = json.data;
+  // storeTokens(tokens);
+  // const user = await fetchUserProfile();
+  // storeTokens(tokens, user);
+  // return { ...tokens, user };
 }
 
 // ==========================================================================
@@ -87,8 +96,14 @@ export async function login(payload: {
   });
 
   if (!res.ok) {
-    console.error("LOGIN ERROR:", await res.text());
-    throw new Error("Login failed");
+    // Try to parse the backend error message
+    try {
+      const errorData = await res.json();
+      throw new Error(errorData.detail || "Login failed");
+    } catch {
+       // Fallback if error isn't JSON
+      throw new Error("Login failed");
+    }
   }
 
   const json = await res.json();

@@ -22,8 +22,12 @@ export default function RegisterPage() {
         email: data.email,
         password: data.password,
       });
-      router.push("/dashboard");
+
+      // ✅ FIX: Redirect to the login page on success
+      router.push("/login");
+      
     } catch (error: any) {
+      // The error message from lib/auth.ts will be shown here
       alert(error?.message || "Registration failed");
     }
   }

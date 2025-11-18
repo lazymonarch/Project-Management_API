@@ -11,7 +11,7 @@ from jose import jwt
 
 from app.database import get_db
 from app.config import get_settings
-from app.schemas.user import UserPublic
+from app.schemas.user import UserPublic, UserRegister # Correct import
 from app.services.user_service import UserService
 from app.services.session_service import SessionService
 from app.services.auth_service import AuthService
@@ -112,45 +112,30 @@ class LogoutRequest(BaseModel):
 
 # REGISTER
 @router.post("/register", status_code=201, response_model=dict)
-async def register(payload: dict, db: AsyncSession = Depends(get_db), request: Request = None):
-    email = payload.get("email")
-    username = payload.get("username")
-    password = payload.get("password")
-    full_name = payload.get("full_name", "")
+async def register(
+    payload: UserRegister, 
+    db: AsyncSession = Depends(get_db), 
+    request: Request = None
+):
+    
+    try:
+        # This part remains the same: create the user
+        user = await UserService.register_user(db, payload)
+    except HTTPException as e:
+        # Re-raise validation errors (e.g., 409 Conflict)
+        raise e
+    except Exception as e:
+        # Catch other potential errors
+        print(f"Error during user registration: {e}")
+        raise HTTPException(status_code=500, detail="Registration failed")
 
-    if not email or not username or not password:
-        raise HTTPException(status_code=400, detail="Missing fields")
+    # ✅ FIX: REMOVED the automatic call to UserService.authenticate
+    # We no longer automatically log the user in.
 
-    user = User(
-        id=uuid4(),
-        email=email,
-        username=username,
-        full_name=full_name,
-        password_hash=hash_password(password),
-        role=UserRole.developer
-    )
-    db.add(user)
-    await db.commit()
-    await db.refresh(user)
-
-    # Automatic login using correct session-based system
-    device = extract_device_info(request)
-    ip = extract_ip(request)
-
-    tokens = await UserService.authenticate(
-        db=db,
-        email=email,
-        password=password,
-        device_name=device.get("device_name"),
-        device_os=device.get("device_os"),
-        user_agent=device.get("user_agent"),
-        ip=ip
-    )
-
-    # Return plain JSON (message + data) — frontend expects `resp.data`
+    # Return plain JSON message. We send no 'data' or tokens.
     return {
-        "message": "Registration successful",
-        "data": tokens
+        "message": "Registration successful. Please log in.",
+        "data": None
     }
 
 
@@ -279,4 +264,3 @@ async def me(current_user: User = Depends(get_current_user)):
             "created_at": current_user.created_at,
         }
     }
-
