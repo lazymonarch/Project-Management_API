@@ -82,7 +82,7 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {projectsData?.data?.map((p) => (
                     <Card key={p.id} className="p-5 hover:shadow-md transition cursor-pointer" 
-                          onClick={() => { /* TODO: Link to project details in Phase 3 */ }}>
+                          onClick={() => router.push(`/projects/${p.id}`)}>
                       <div className="flex justify-between items-start">
                         <h3 className="font-semibold text-lg">{p.name}</h3>
                         <Badge variant="secondary" className="capitalize">{p.status}</Badge>
