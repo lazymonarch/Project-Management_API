@@ -5,6 +5,7 @@ import { logout } from "@/lib/auth";
 import { ProtectedClientWrapper } from "@/components/ProtectedClientWrapper";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ArrowLeft } from "lucide-react"; 
 
 export default function AdminPage() {
   const router = useRouter();
@@ -20,7 +21,18 @@ export default function AdminPage() {
       loadingLabel="Loading admin panel..."
     >
       {({ user }) => (
-        <div className="space-y-10">
+        <div className="space-y-6">
+          <div>
+            <Button 
+              variant="ghost" 
+              className="pl-0 gap-2 text-slate-500 hover:text-slate-900 hover:bg-transparent"
+              onClick={() => router.push("/dashboard")}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Dashboard
+            </Button>
+          </div>
+
           {/* Header */}
           <div>
             <p className="text-xs uppercase font-semibold tracking-wide text-slate-500">

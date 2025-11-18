@@ -1,8 +1,19 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { logout } from "@/lib/auth";
 import { ProtectedClientWrapper } from "@/components/ProtectedClientWrapper";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { backendFetch } from "@/lib/fetcher";
+
+interface Project {
+  id: string;
+  name: string;
+  status: string;
+}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -16,43 +27,80 @@ export default function DashboardPage() {
     }
   };
 
+  // Fetch projects for the dashboard
+  const { data: projectsData } = useQuery({
+    queryKey: ["my-projects"],
+    queryFn: async () => backendFetch<{ data: Project[] }>("/projects"),
+  });
+
   return (
     <ProtectedClientWrapper loadingLabel="Loading dashboard...">
       {({ user }) => (
-        <div className="space-y-6">
-          <div>
-            <p className="text-sm uppercase font-semibold tracking-wide text-slate-500">
-              Dashboard
-            </p>
-            <h1 className="text-3xl font-bold text-slate-900">
-              Welcome, {user.full_name || user.email}
-            </h1>
+        <div className="space-y-8">
+          {/* Header Section */}
+          <div className="flex justify-between items-end">
+            <div>
+              <p className="text-sm uppercase font-semibold tracking-wide text-slate-500">
+                Dashboard
+              </p>
+              <h1 className="text-3xl font-bold text-slate-900">
+                Welcome, {user.full_name || user.email}
+              </h1>
+              <p className="text-slate-500 mt-1">
+                Role: <span className="font-medium capitalize">{user.role}</span>
+              </p>
+            </div>
+            <Button variant="outline" onClick={handleLogout}>Logout</Button>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <p className="text-sm text-slate-500">Signed in as</p>
-            <p className="text-lg font-semibold text-slate-900">{user.email}</p>
-            <p className="text-sm text-slate-500">
-              Role: {user.role ?? "unknown"}
-            </p>
+          {/* Admin Area Button */}
+          {user.role === "admin" && (
+            <Card className="p-6 bg-slate-50 border-slate-200">
+              <h3 className="font-semibold mb-2">Admin Actions</h3>
+              <Button onClick={() => router.push("/admin")}>
+                Go to Admin Panel
+              </Button>
+            </Card>
+          )}
 
-            <div className="mt-6 flex items-center gap-4">
-              <button className="btn" onClick={handleLogout}>
-                Logout
-              </button>
-              {user.role === "admin" && (
-                <button
-                  className="btn-primary"
-                  onClick={() => router.push("/admin")}
-                >
-                  Go to admin area
-                </button>
+          {/* MANAGER SECTION */}
+          {user.role === "manager" && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-bold">My Projects</h2>
+                <Button onClick={() => router.push("/projects/create")}>
+                  + Create Project
+                </Button>
+              </div>
+
+              {projectsData?.data?.length === 0 ? (
+                <p className="text-slate-500">No projects found. Create one to get started.</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {projectsData?.data?.map((p) => (
+                    <Card key={p.id} className="p-5 hover:shadow-md transition cursor-pointer" 
+                          onClick={() => { /* TODO: Go to project detail */ }}>
+                      <div className="flex justify-between items-start">
+                        <h3 className="font-semibold text-lg">{p.name}</h3>
+                        <Badge variant="secondary">{p.status}</Badge>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
               )}
             </div>
-          </div>
+          )}
+          
+          {/* DEVELOPER SECTION (Placeholder for Phase 3) */}
+          {user.role === "developer" && (
+             <div className="space-y-4">
+                <h2 className="text-xl font-bold">My Assigned Tasks</h2>
+                <p className="text-slate-500">Task view coming in Phase 3...</p>
+             </div>
+          )}
+
         </div>
       )}
     </ProtectedClientWrapper>
   );
 }
-

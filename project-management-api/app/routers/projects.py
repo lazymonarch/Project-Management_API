@@ -1,6 +1,6 @@
 # app/routers/projects.py
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 from datetime import datetime
@@ -29,13 +29,13 @@ router = APIRouter(
 
 
 # -------------------------
-# CREATE PROJECT
+# CREATE PROJECT (Managers Only)
 # -------------------------
-@router.post("/", response_model=ProjectPublic)
+@router.post("/", response_model=SuccessResponse)
 async def create_project(
     payload: ProjectCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_roles(UserRole.admin, UserRole.manager))
+    current_user: User = Depends(require_roles(UserRole.manager))
 ):
     project = await ProjectService.create_project(db, payload, current_user.id)
     return success("Project created successfully", {"data": project})
@@ -44,7 +44,7 @@ async def create_project(
 # -------------------------
 # GET PROJECT BY ID
 # -------------------------
-@router.get("/{project_id}", response_model=ProjectPublic)
+@router.get("/{project_id}", response_model=SuccessResponse)
 async def get_project(
     project_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -56,33 +56,45 @@ async def get_project(
 
 
 # -------------------------
-# UPDATE PROJECT
+# UPDATE PROJECT (Owner Manager Only)
 # -------------------------
-@router.put("/{project_id}", response_model=ProjectPublic)
+@router.put("/{project_id}", response_model=SuccessResponse)
 async def update_project(
     project_id: UUID,
     payload: ProjectUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_roles(UserRole.admin, UserRole.manager))
+    current_user: User = Depends(require_roles(UserRole.manager))
 ):
     project = await ProjectService.get_project(db, project_id)
-    await ProjectService.ensure_project_access(db, project, current_user)
-    project = await ProjectService.update_project(db, project_id, payload)
+    if project.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not own this project."
+        )
 
+    project = await ProjectService.update_project(db, project_id, payload)
     return success("Project updated successfully", {"data": project})
 
 
 # -------------------------
-# DELETE PROJECT
+# DELETE PROJECT (Owner Manager Only)
 # -------------------------
-@router.delete("/{project_id}",response_model=SuccessResponse)
+@router.delete("/{project_id}", response_model=SuccessResponse)
 async def delete_project(
     project_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_roles(UserRole.admin))
+    current_user: User = Depends(require_roles(UserRole.manager))
 ):
+    project = await ProjectService.get_project(db, project_id)
+
+    if project.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not own this project."
+        )
+
     await ProjectService.delete_project(db, project_id)
-    return {"message": "Project deleted successfully"}
+    return success("Project deleted successfully")
 
 
 # -------------------------
@@ -99,6 +111,10 @@ async def list_projects(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    # Service handles filtering:
+    # - Admins see ALL
+    # - Managers see ONLY theirs
+    # - Devs see ONLY assigned
     projects, pagination = await ProjectService.list_projects(
         db=db,
         status=status,
@@ -126,12 +142,12 @@ async def get_project_summary(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    summary = await ProjectService.get_project_summary(db, project_id)
-
-    if not summary:
-        raise HTTPException(status_code=404, detail="Project not found")
-
+    # Ensure existence and access first
     project = await ProjectService.get_project(db, project_id)
     await ProjectService.ensure_project_access(db, project, current_user)
+
+    summary = await ProjectService.get_project_summary(db, project_id)
+    if not summary:
+         raise HTTPException(status_code=404, detail="Project not found")
 
     return success("Project summary", {"data": summary})

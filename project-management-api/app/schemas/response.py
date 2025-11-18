@@ -1,6 +1,6 @@
 # app/schemas/response.py
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict  
 from uuid import UUID
 from datetime import datetime
 from typing import List, Optional, Dict, Any
@@ -13,7 +13,7 @@ from app.models.enums import (
 )
 
 # ============================================================
-# GENERIC SUCCESS RESPONSE (optional)
+# GENERIC SUCCESS RESPONSE
 # ============================================================
 
 class SuccessResponse(BaseModel):
@@ -31,7 +31,10 @@ class UserResponse(BaseModel):
     username: str
     full_name: str
     role: UserRole
+    is_active: bool
     created_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserListItem(BaseModel):
@@ -40,6 +43,9 @@ class UserListItem(BaseModel):
     username: str
     full_name: str
     role: UserRole
+    is_active: bool
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class Pagination(BaseModel):
@@ -69,12 +75,16 @@ class ProjectPublic(BaseModel):
     created_at: datetime
     updated_at: datetime
     owner_id: UUID
+    
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProjectListItem(BaseModel):
     id: UUID
     name: str
     status: ProjectStatus
+    
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProjectListResponse(BaseModel):
@@ -83,7 +93,7 @@ class ProjectListResponse(BaseModel):
     pagination: Pagination
 
 
-# -------- Project Summary (MATCHES SERVICE OUTPUT PERFECTLY) -------- #
+# -------- Project Summary -------- #
 
 class TaskOverview(BaseModel):
     total: int
@@ -132,6 +142,8 @@ class TaskResponse(BaseModel):
     estimated_hours: Optional[int]
     created_at: datetime
     updated_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TaskListItem(BaseModel):
@@ -140,6 +152,8 @@ class TaskListItem(BaseModel):
     status: TaskStatus
     priority: TaskPriority
     project_id: UUID
+    
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TaskListResponse(BaseModel):
@@ -171,6 +185,8 @@ class SessionResponse(BaseModel):
     is_active: bool
     created_at: datetime
     last_used_at: Optional[datetime]
+    
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SessionListResponse(BaseModel):

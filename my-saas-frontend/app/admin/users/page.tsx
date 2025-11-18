@@ -1,25 +1,25 @@
 "use client";
 
-import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { backendFetch } from "@/lib/fetcher"; 
 import { Badge } from "@/components/ui/badge";
+import { ArrowLeft } from "lucide-react"; 
 
-// ✅ FIX: Define the types for the user and the API response
 interface User {
   id: string;
   full_name: string;
   email: string;
   role: string;
+  is_active: boolean;
 }
 
 interface UserListResponse {
   message: string;
   data: User[];
-  pagination: any; // We don't need to type pagination for this
+  pagination: any;
 }
 
 export default function ManageUsersPage() {
@@ -30,11 +30,9 @@ export default function ManageUsersPage() {
     isLoading,
     error,
     refetch
-    // ✅ FIX: Pass the response type to useQuery
   } = useQuery<UserListResponse>({
     queryKey: ["users"],
     queryFn: async () => {
-      // ✅ FIX: Pass the response type to backendFetch
       return backendFetch<UserListResponse>("/users"); 
     },
   });
@@ -44,6 +42,17 @@ export default function ManageUsersPage() {
 
   return (
     <div className="p-8 space-y-6">
+      <div>
+        <Button 
+          variant="ghost" 
+          className="pl-0 gap-2 text-slate-500 hover:text-slate-900 hover:bg-transparent"
+          onClick={() => router.push("/admin")}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Admin Panel
+        </Button>
+      </div>
+
       <h1 className="text-3xl font-bold">Manage Users</h1>
 
       <Card className="p-4 shadow-md rounded-2xl">
@@ -53,36 +62,48 @@ export default function ManageUsersPage() {
               <th className="p-3">Name</th>
               <th className="p-3">Email</th>
               <th className="p-3">Role</th>
+              <th className="p-3">Status</th>
               <th className="p-3">Actions</th>
             </tr>
           </thead>
 
           <tbody>
-            {/* data is now correctly typed as UserListResponse | undefined */}
-            {data?.data?.map((u: User) => ( // ✅ FIX: Use the User type
+            {data?.data?.map((u: User) => (
               <tr key={u.id} className="border-b">
                 <td className="p-3">{u.full_name}</td>
                 <td className="p-3">{u.email}</td>
                 <td className="p-3">
-                  <Badge className="capitalize">{u.role}</Badge>
+                  <Badge className="capitalize" variant={u.role === 'admin' ? 'default' : 'secondary'}>
+                    {u.role}
+                  </Badge>
+                </td>
+                <td className="p-3">
+                   <Badge variant={u.is_active ? "outline" : "destructive"}>
+                     {u.is_active ? "Active" : "Disabled"}
+                   </Badge>
                 </td>
                 <td className="p-3 space-x-3">
                   <Button
                     variant="secondary"
+                    size="sm"
                     onClick={() => router.push(`/admin/users/${u.id}`)}
                   >
                     Edit
                   </Button>
 
-                  <Button
-                    variant="destructive"
-                    onClick={async () => {
-                      await backendFetch(`/users/${u.id}`, { method: "DELETE" });
-                      refetch();
-                    }}
-                  >
-                    Delete
-                  </Button>
+                  {u.role !== 'admin' && u.is_active && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={async () => {
+                        if(!confirm("Are you sure you want to disable this user?")) return;
+                        await backendFetch(`/users/${u.id}`, { method: "DELETE" });
+                        refetch();
+                      }}
+                    >
+                      Disable
+                    </Button>
+                  )}
                 </td>
               </tr>
             ))}

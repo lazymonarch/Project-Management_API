@@ -3,11 +3,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_
 from fastapi import HTTPException, status
-from uuid import uuid4
+from uuid import uuid4, UUID 
 from datetime import datetime
 
 from app.models.user import User
-# ✅ IMPORT THE NEW UserRegister SCHEMA (and UserRole)
 from app.schemas.user import UserCreate, UserRegister
 from app.models.enums import UserRole 
 from app.utils.auth import (
@@ -17,11 +16,11 @@ from app.utils.auth import (
 )
 from app.services.session_service import SessionService
 from app.utils.pagination import paginate, build_pagination_metadata
+from app.schemas.user import UserCreate, UserRegister, UserUpdate
 
 
 class UserService:
 
-    # ✅ ADD THIS NEW METHOD FOR PUBLIC REGISTRATION
     @staticmethod
     async def register_user(db: AsyncSession, user_data: UserRegister):
         """
@@ -40,12 +39,12 @@ class UserService:
 
         # Create new user
         new_user = User(
-            id=uuid4(), # Ensure ID is generated here
+            id=uuid4(), 
             email=user_data.email,
             username=user_data.username,
             full_name=user_data.full_name,
             password_hash=hash_password(user_data.password),
-            role=UserRole.developer  # Hard-code the default role
+            role=UserRole.developer  
         )
 
         db.add(new_user)
@@ -81,6 +80,32 @@ class UserService:
         await db.commit()
         await db.refresh(new_user)
         return new_user
+    
+    @staticmethod
+    async def update_user(db: AsyncSession, user_id: UUID, data: UserUpdate):
+        # 1. Find user
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+
+        if not user:
+            return None
+
+        # 2. Update fields if provided
+        if data.full_name is not None:
+            user.full_name = data.full_name
+        
+        if data.role is not None:
+            # Optional: Prevent changing own role or changing TO admin if not allowed
+            # But for now, we trust the router's permission check (Admin Only)
+            user.role = data.role
+
+        # 3. Commit
+        user.updated_at = datetime.now() 
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+        
+        return user
 
     @staticmethod
     async def authenticate(
@@ -102,10 +127,13 @@ class UserService:
                 detail="Invalid email or password"
             )
 
-        # 1) Generate refresh token (plain token)
-        refresh_token = str(uuid4())
+        if not user.is_active:
+             raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Account is disabled. Please contact admin."
+            )
 
-        # 2) Create session in DB
+        refresh_token = str(uuid4())
         session = await SessionService.create_session(
             db=db,
             user_id=user.id,
@@ -115,8 +143,6 @@ class UserService:
             user_agent=user_agent,
             ip=ip,
         )
-
-        # 3) Create access token (timeless)
         access_token = create_access_token({
             "user_id": str(user.id),
             "session_id": str(session.id)
@@ -129,7 +155,6 @@ class UserService:
             "token_type": "bearer"
         }
 
-    # ... (rest of the service file: get_users, list_users, etc.) ...
     
     @staticmethod
     async def get_users(db, page: int, limit: int):
@@ -149,6 +174,11 @@ class UserService:
 
         metadata = build_pagination_metadata(page, limit, total)
         return users, metadata
+    
+    @staticmethod
+    async def get_user_by_id(db: AsyncSession, user_id: UUID):
+        result = await db.execute(select(User).where(User.id == user_id))
+        return result.scalar_one_or_none()
 
     @staticmethod
     async def list_users(

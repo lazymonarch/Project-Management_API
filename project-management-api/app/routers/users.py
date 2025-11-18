@@ -1,5 +1,6 @@
 # app/routers/users.py
 
+from sqlalchemy import select
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
@@ -8,7 +9,7 @@ from pydantic import BaseModel
 
 from app.database import get_db
 from app.models.enums import UserRole
-from app.schemas.response import TaskListResponse, UserListResponse, UserResponse
+from app.schemas.response import SuccessResponse, TaskListResponse, UserListResponse, UserResponse
 from app.services.user_service import UserService
 from app.utils.permissions import require_roles
 from app.utils.response import success
@@ -56,38 +57,43 @@ async def list_users(
 # -------------------------
 # GET USER BY ID
 # -------------------------
-@router.get("/{user_id}", response_model=UserResponse)
+@router.get("/{user_id}", response_model=SuccessResponse)
 async def get_user(
     user_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_roles(UserRole.admin, UserRole.manager)),
 ):
     user = await UserService.get_user_by_id(db, user_id)
+    
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
-    return success("User details", user)
+    
+    user_data = UserResponse.model_validate(user)
+    return success("User details", user_data)
 
 
 # -------------------------
 # CREATE USER
 # -------------------------
-@router.post("/", response_model=UserResponse)
+@router.post("/", response_model=SuccessResponse)
 async def create_user(
     payload: UserCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_roles(UserRole.admin)),
 ):
     user = await UserService.create_user(db, payload)
-    return success("User created", user)
+    
+    user_data = UserResponse.model_validate(user)
+    return success("User created", user_data)
 
 
 # -------------------------
 # UPDATE USER
 # -------------------------
-@router.put("/{user_id}", response_model=UserResponse)
+@router.put("/{user_id}", response_model=SuccessResponse)
 async def update_user(
     user_id: UUID,
     payload: UserUpdate,
@@ -95,30 +101,48 @@ async def update_user(
     current_user: User = Depends(require_roles(UserRole.admin)),
 ):
     updated = await UserService.update_user(db, user_id, payload)
+    
     if not updated:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
-    return success("User updated", updated)
+    
+    user_data = UserResponse.model_validate(updated)
+    return success("User updated", user_data)
 
 
 # -------------------------
 # DELETE USER
 # -------------------------
-@router.delete("/{user_id}", response_model=UserResponse)
+@router.delete("/{user_id}", response_model=SuccessResponse)
 async def delete_user(
     user_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_roles(UserRole.admin)),
 ):
-    deleted = await UserService.delete_user(db, user_id)
-    if not deleted:
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
-    return success("User deleted", {"id": str(user_id)})
+
+    if user.role == UserRole.admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admins cannot be disabled."
+        )
+
+    user.is_active = False
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+
+    user_data = UserResponse.model_validate(user)
+    return success("User disabled successfully", user_data)
 
 
 # -------------------------

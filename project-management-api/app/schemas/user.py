@@ -6,7 +6,6 @@ from app.models.enums import UserRole
 from datetime import datetime
 
 
-# ✅ ADD THIS NEW SCHEMA
 class UserRegister(BaseModel):
     """Schema for public user registration. Does not include 'role'."""
     email: EmailStr
@@ -35,6 +34,7 @@ class UserPublic(BaseModel):
     username: str
     full_name: str
     role: UserRole
+    is_active: bool
     created_at: datetime
     updated_at: datetime | None = None
 

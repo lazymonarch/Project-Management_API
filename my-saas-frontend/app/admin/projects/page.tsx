@@ -6,14 +6,12 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { backendFetch } from "@/lib/fetcher";
+import { ArrowLeft } from "lucide-react";
 
-// ✅ FIX: Define the types for the project and the API response
 interface Project {
   id: string;
   name: string;
   status: string;
-  // Based on your backend schema, the project list response
-  // does not include the full owner details.
   owner_id: string; 
 }
 
@@ -30,12 +28,9 @@ export default function ManageProjectsPage() {
     data,
     isLoading,
     error,
-    refetch
-    // ✅ FIX: Pass the response type to useQuery
   } = useQuery<ProjectListResponse>({
     queryKey: ["projects"],
     queryFn: async () => {
-      // ✅ FIX: Pass the response type to backendFetch
       return backendFetch<ProjectListResponse>("/projects");
     },
   });
@@ -45,12 +40,19 @@ export default function ManageProjectsPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Manage Projects</h1>
-
-        <Button onClick={() => router.push("/admin/projects/new")}>
-          Create Project
+      <div>
+        <Button 
+          variant="ghost" 
+          className="pl-0 gap-2 text-slate-500 hover:text-slate-900 hover:bg-transparent"
+          onClick={() => router.push("/admin")}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Admin Panel
         </Button>
+      </div>
+
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">All Projects (Read Only)</h1>
       </div>
 
       <Card className="p-4 shadow-md rounded-2xl">
@@ -65,8 +67,7 @@ export default function ManageProjectsPage() {
           </thead>
 
           <tbody>
-            {/* data is now correctly typed as ProjectListResponse | undefined */}
-            {data?.data?.map((p: Project) => ( // ✅ FIX: Use the Project type
+            {data?.data?.map((p: Project) => (
               <tr key={p.id} className="border-b">
                 <td className="p-3">{p.name}</td>
 
@@ -74,29 +75,12 @@ export default function ManageProjectsPage() {
                   <Badge className="capitalize">{p.status}</Badge>
                 </td>
                 
-                {/* Your backend's list-projects endpoint returns 'owner_id'
-                    not the full owner object. Displaying the ID is correct. */}
                 <td className="p-3 text-xs font-mono">{p.owner_id}</td>
 
                 <td className="p-3 space-x-3">
                   <Button variant="secondary"
                     onClick={() => router.push(`/admin/projects/${p.id}`)}>
-                    View
-                  </Button>
-
-                  <Button
-                    onClick={() => router.push(`/admin/projects/${p.id}/edit`)}
-                  >
-                    Edit
-                  </Button>
-
-                  <Button variant="destructive"
-                    onClick={async () => {
-                      await backendFetch(`/projects/${p.id}`, { method: "DELETE" });
-                      refetch();
-                    }}
-                  >
-                    Delete
+                    View Details
                   </Button>
                 </td>
               </tr>

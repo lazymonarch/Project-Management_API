@@ -1,7 +1,7 @@
 # app/models/user.py
 
 import uuid
-from sqlalchemy import Column, String, Enum, TIMESTAMP, func
+from sqlalchemy import Column, String, Enum, TIMESTAMP, func, Boolean 
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -26,6 +26,8 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
 
     role = Column(Enum(UserRole, name="user_role", create_type=False), nullable=False)
+    
+    is_active = Column(Boolean, default=True, nullable=False)
 
     created_at = Column(
         TIMESTAMP(timezone=True),
@@ -39,7 +41,7 @@ class User(Base):
         onupdate=func.now()
     )
 
-    # Relationships (NO imports needed!)
+    # Relationships
     projects = relationship("Project", back_populates="owner")
     created_tasks = relationship("Task", back_populates="creator", foreign_keys="Task.created_by")
     assigned_tasks = relationship("Task", back_populates="assignee", foreign_keys="Task.assigned_to")
