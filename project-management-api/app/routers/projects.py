@@ -8,7 +8,7 @@ from datetime import datetime
 from app.database import get_db
 from app.schemas.project import ProjectCreate, ProjectUpdate
 from app.schemas.response import (
-    ProjectPublic,
+    ProjectPublic, 
     ProjectListResponse,
     ProjectSummaryResponse,
     SuccessResponse
@@ -38,7 +38,10 @@ async def create_project(
     current_user: User = Depends(require_roles(UserRole.manager))
 ):
     project = await ProjectService.create_project(db, payload, current_user.id)
-    return success("Project created successfully", {"data": project})
+    
+    project_data = ProjectPublic.model_validate(project)
+    
+    return success("Project created successfully", project_data)
 
 
 # -------------------------
@@ -52,7 +55,10 @@ async def get_project(
 ):
     project = await ProjectService.get_project(db, project_id)
     await ProjectService.ensure_project_access(db, project, current_user)
-    return success("Project details", {"data": project})
+    
+    project_data = ProjectPublic.model_validate(project)
+    
+    return success("Project details", project_data)
 
 
 # -------------------------
@@ -66,14 +72,18 @@ async def update_project(
     current_user: User = Depends(require_roles(UserRole.manager))
 ):
     project = await ProjectService.get_project(db, project_id)
+    
     if project.owner_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not own this project."
         )
 
-    project = await ProjectService.update_project(db, project_id, payload)
-    return success("Project updated successfully", {"data": project})
+    updated_project = await ProjectService.update_project(db, project_id, payload)
+    
+    project_data = ProjectPublic.model_validate(updated_project)
+    
+    return success("Project updated successfully", project_data)
 
 
 # -------------------------
@@ -111,10 +121,6 @@ async def list_projects(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    # Service handles filtering:
-    # - Admins see ALL
-    # - Managers see ONLY theirs
-    # - Devs see ONLY assigned
     projects, pagination = await ProjectService.list_projects(
         db=db,
         status=status,
@@ -126,11 +132,10 @@ async def list_projects(
         current_user=current_user
     )
 
-    return {
-        "message": "Project list",
+    return success("Project list", {
         "data": projects,
         "pagination": pagination
-    }
+    })
 
 
 # -------------------------
@@ -142,7 +147,6 @@ async def get_project_summary(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    # Ensure existence and access first
     project = await ProjectService.get_project(db, project_id)
     await ProjectService.ensure_project_access(db, project, current_user)
 

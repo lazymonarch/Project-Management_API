@@ -1,6 +1,6 @@
 # app/schemas/response.py
 
-from pydantic import BaseModel, ConfigDict  
+from pydantic import BaseModel, ConfigDict
 from uuid import UUID
 from datetime import datetime
 from typing import List, Optional, Dict, Any
@@ -44,7 +44,7 @@ class UserListItem(BaseModel):
     full_name: str
     role: UserRole
     is_active: bool
-
+    
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -83,6 +83,7 @@ class ProjectListItem(BaseModel):
     id: UUID
     name: str
     status: ProjectStatus
+    owner_id: UUID 
     
     model_config = ConfigDict(from_attributes=True)
 

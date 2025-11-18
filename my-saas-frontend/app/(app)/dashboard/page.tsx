@@ -27,10 +27,9 @@ export default function DashboardPage() {
     }
   };
 
-  // Fetch projects for the dashboard
   const { data: projectsData } = useQuery({
     queryKey: ["my-projects"],
-    queryFn: async () => backendFetch<{ data: Project[] }>("/projects"),
+    queryFn: async () => backendFetch<{ data: Project[] }>("/projects/"),
   });
 
   return (
@@ -53,17 +52,16 @@ export default function DashboardPage() {
             <Button variant="outline" onClick={handleLogout}>Logout</Button>
           </div>
 
-          {/* Admin Area Button */}
           {user.role === "admin" && (
             <Card className="p-6 bg-slate-50 border-slate-200">
-              <h3 className="font-semibold mb-2">Admin Actions</h3>
+              <h3 className="font-semibold mb-2 text-lg">Admin Actions</h3>
+              <p className="text-slate-500 mb-4">Manage users and view system-wide projects.</p>
               <Button onClick={() => router.push("/admin")}>
                 Go to Admin Panel
               </Button>
             </Card>
           )}
 
-          {/* MANAGER SECTION */}
           {user.role === "manager" && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
@@ -74,16 +72,22 @@ export default function DashboardPage() {
               </div>
 
               {projectsData?.data?.length === 0 ? (
-                <p className="text-slate-500">No projects found. Create one to get started.</p>
+                <div className="p-8 text-center border-2 border-dashed rounded-xl">
+                  <p className="text-slate-500 mb-4">No projects found. Create one to get started.</p>
+                  <Button variant="outline" onClick={() => router.push("/projects/create")}>
+                    Create your first project
+                  </Button>
+                </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {projectsData?.data?.map((p) => (
                     <Card key={p.id} className="p-5 hover:shadow-md transition cursor-pointer" 
-                          onClick={() => { /* TODO: Go to project detail */ }}>
+                          onClick={() => { /* TODO: Link to project details in Phase 3 */ }}>
                       <div className="flex justify-between items-start">
                         <h3 className="font-semibold text-lg">{p.name}</h3>
-                        <Badge variant="secondary">{p.status}</Badge>
+                        <Badge variant="secondary" className="capitalize">{p.status}</Badge>
                       </div>
+                      <p className="text-sm text-slate-400 mt-2">Click to view tasks</p>
                     </Card>
                   ))}
                 </div>
@@ -91,11 +95,12 @@ export default function DashboardPage() {
             </div>
           )}
           
-          {/* DEVELOPER SECTION (Placeholder for Phase 3) */}
           {user.role === "developer" && (
              <div className="space-y-4">
                 <h2 className="text-xl font-bold">My Assigned Tasks</h2>
-                <p className="text-slate-500">Task view coming in Phase 3...</p>
+                <Card className="p-8 text-center border-dashed">
+                  <p className="text-slate-500">You have no tasks assigned yet.</p>
+                </Card>
              </div>
           )}
 

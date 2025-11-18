@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { backendFetch } from "@/lib/fetcher";
+import { backendFetch } from "../../../lib/fetcher";
 import { ArrowLeft } from "lucide-react";
 
 interface Project {
@@ -40,6 +40,7 @@ export default function ManageProjectsPage() {
 
   return (
     <div className="p-8 space-y-6">
+      {/* Back Button */}
       <div>
         <Button 
           variant="ghost" 

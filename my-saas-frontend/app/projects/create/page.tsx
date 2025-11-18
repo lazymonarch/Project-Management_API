@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ArrowLeft } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -33,18 +34,31 @@ export default function CreateProjectPage() {
 
   const mutation = useMutation({
     mutationFn: async (data: CreateProjectInput) => {
-      // ✅ POST to create project
-      return backendFetch("/projects", {
+      // Sanitize data
+      const payload = {
+        ...data,
+        description: data.description || null,
+        start_date: data.start_date || null,
+        end_date: data.end_date || null,
+      };
+
+      return backendFetch("/projects/", { 
         method: "POST",
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-      router.push("/dashboard"); // Go back to dashboard
+      queryClient.invalidateQueries({ queryKey: ["my-projects"] });
+      router.push("/dashboard"); 
     },
     onError: (err: any) => {
-      alert(err.message || "Failed to create project");
+      console.error("Create Project Error:", err);
+      let msg = err.message || "Failed to create project";
+      if (Array.isArray(err.data?.detail)) {
+        msg = err.data.detail.map((e: any) => e.msg).join(", ");
+      }
+      alert(msg);
     },
   });
 
@@ -55,7 +69,18 @@ export default function CreateProjectPage() {
   return (
     <ProtectedClientWrapper requiredRole="manager" loadingLabel="Verifying manager access...">
       {() => (
-        <div className="p-8 max-w-lg mx-auto">
+        <div className="p-8 max-w-lg mx-auto space-y-6">
+          <div>
+            <Button 
+              variant="ghost" 
+              className="pl-0 gap-2 text-slate-500 hover:text-slate-900 hover:bg-transparent"
+              onClick={() => router.back()}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+          </div>
+
           <Card className="p-6 shadow-lg rounded-2xl">
             <h1 className="text-2xl font-bold mb-6">Create New Project</h1>
 
@@ -80,7 +105,10 @@ export default function CreateProjectPage() {
 
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select onValueChange={(val) => setValue("status", val)} defaultValue="planning">
+                <Select 
+                  onValueChange={(val) => setValue("status", val)} 
+                  defaultValue="planning"
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
@@ -91,6 +119,7 @@ export default function CreateProjectPage() {
                     <SelectItem value="completed">Completed</SelectItem>
                   </SelectContent>
                 </Select>
+                <input type="hidden" {...register("status", { value: "planning" })} />
               </div>
               
               <div className="grid grid-cols-2 gap-4">
