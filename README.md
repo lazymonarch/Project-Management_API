@@ -1,47 +1,93 @@
-# 🚀 Project Management System
+# 🚀 Project Management System (TaskFlow)
 
-> A modern, full-stack project management solution built with FastAPI and Next.js 15
+> A modern, production-grade project management platform built with FastAPI and Next.js 15
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Next.js](https://img.shields.io/badge/Next.js_15-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-## ✨ Overview
-
-A clean, understandable, and extendable project management system featuring JWT authentication, role-based access control, and a modern React interface. Built as part of an assessment to demonstrate full-stack development capabilities.
-
-### 🎯 Key Features
-
-- **🔐 Secure Authentication** - JWT-based auth with refresh token rotation
-- **👥 Role-Based Access Control** - Admin, Manager, and Developer roles
-- **📊 Real-time Dashboard** - Task statistics and project insights
-- **🔄 Session Management** - Multi-device support with logout-from-all
-- **🎨 Modern UI** - Built with Tailwind CSS and shadcn/ui
-- **⚡ High Performance** - Async database operations with SQLAlchemy 2.0
+TaskFlow demonstrates **real-world full-stack engineering**: backend APIs, frontend UI, RBAC, sessions, soft deletes, token refresh flows, project/task pipelines, and production-aligned system design. This is no longer a demo — it behaves like a **real SaaS project** with proper guardrails, security patterns, and lifecycle management.
 
 ---
 
-## 🛠️ Tech Stack
+## ✨ What Makes TaskFlow Different
 
-### Backend
-```
-FastAPI          → Async Python web framework
-SQLAlchemy 2.0   → Async ORM
-PostgreSQL       → Primary database
-Alembic          → Database migrations
-JWT (jose)       → Token authentication
-Passlib + bcrypt → Password hashing
-Pydantic v2      → Data validation
+🔐 **Hardened Security** - JWT with refresh rotation, XSS-safe token storage, session tracking  
+👥 **Strict RBAC** - Three-tier permission system with enforced boundaries  
+🛡️ **Safe Admin Controls** - Soft deletes, admin protection, duplicate prevention  
+📁 **Manager Workflows** - Own and manage projects with full team assignment  
+📌 **Developer Focus** - Clean "My Tasks" interface with status updates  
+🎨 **Production-Ready UI** - Built with Next.js 15 App Router and shadcn/ui  
+⚡ **Async-First Backend** - FastAPI with SQLAlchemy 2.0 async operations
+
+---
+
+## 🧩 Roles & Capabilities
+
+| Feature         | 👑 Admin                     | 💼 Manager                   | 🧑‍💻 Developer    |
+| --------------- | ---------------------------- | ---------------------------- | ---------------- |
+| Authentication  | Login/Logout                 | Register/Login               | Register/Login   |
+| User Management | Full control (Edit/Disable)  | ❌                            | ❌                |
+| Projects        | Read-only audit              | Create / Edit / Delete (Own) | View assigned    |
+| Tasks           | View-only                    | Create / Assign              | Update own       |
+| Dashboard       | Admin Panel                  | Project Hub                  | My Tasks         |
+| Permissions     | Cannot modify other admins   | Own projects only            | Own tasks only   |
+
+---
+
+## 🎯 Key Features
+
+### 🔐 Authentication & Security
+
+- **Manual Login Flow** - No auto-login after registration for enhanced security
+- **Memory-Only Access Tokens** - XSS-safe pattern prevents token theft
+- **Refresh Token Rotation** - Stored in localStorage with automatic retry
+- **Session Management** - Multi-device tracking with logout-from-all capability
+- **User Blocking** - Soft disable via `is_active=False` flag
+- **Duplicate Prevention** - Enforced unique emails and usernames
+- **Smart Error Handling** - Clean parsing for backend validation errors
+
+### 👑 Admin Panel
+
+```typescript
+// Admin capabilities
+✓ View all users with Role + Status indicators
+✓ Soft delete (Disable user) instead of hard delete
+✓ Prevent editing or disabling other admin accounts
+✓ Read-only access to all projects for audit
+✓ System-wide statistics and monitoring
 ```
 
-### Frontend
-```
-Next.js 15       → React framework with App Router
-React 18         → UI library
-Tailwind CSS     → Utility-first styling
-shadcn/ui        → Component library
-TypeScript       → Type safety
+### 💼 Manager Workflows
+
+- **Project Ownership** - Create, edit, and delete your own projects
+- **Project Hub Interface**:
+  - Settings panel for project configuration
+  - Task list with filtering and search
+  - Create Task modal with assignment
+  - Developer team management
+- **Clean List View** - Focused on productivity (Kanban removed for clarity)
+
+### 🧑‍💻 Developer Workflows
+
+- **"My Tasks" Dashboard** - Personalized task view
+- **Status Pipeline**: `Todo → In Progress → Done`
+- **Assignment-Based Access** - Only see your assigned tasks
+- **Quick Status Updates** - One-click status changes
+- **Task Details** - Full context for each assignment
+
+### 🧱 Backend Architecture
+
+```python
+# Production-ready patterns
+✓ Pydantic v2 with from_attributes=True
+✓ Enforced Enum for status/priority consistency
+✓ Centralized permissions layer
+✓ Clear 401/403 error boundaries
+✓ Service layer separation
+✓ Async database operations
+✓ Type-safe API responses
 ```
 
 ---
@@ -51,52 +97,81 @@ TypeScript       → Type safety
 ```
 Project-Management/
 │
-├── 📂 my-saas-frontend/              # Next.js Frontend
+├── 📂 my-saas-frontend/                # Next.js 15 Frontend
 │   ├── 📂 app/
-│   │   ├── 📂 (auth)/                # Authentication pages
+│   │   ├── 📂 (app)/                   # 🔒 Authenticated Area
+│   │   │   ├── dashboard/              # Main dashboard
+│   │   │   └── layout.tsx              # Protected layout
+│   │   ├── 📂 (auth)/                  # 🔓 Public Area
 │   │   │   ├── login/
-│   │   │   └── register/
-│   │   ├── 📂 (app)/
-│   │   │   └── dashboard/            # Protected dashboard
-│   │   ├── 📂 admin/                 # Admin-only pages
+│   │   │   ├── register/
+│   │   │   └── layout.tsx
+│   │   ├── 📂 admin/                   # 👑 Admin Only
+│   │   │   ├── page.tsx                # Admin dashboard
+│   │   │   ├── users/                  # User management
+│   │   │   └── projects/               # Project audit
+│   │   ├── 📂 projects/                # 💼 Manager Views
+│   │   │   ├── [id]/                   # Project hub
+│   │   │   └── create/                 # New project
+│   │   ├── 📂 tasks/                   # 🧑‍💻 Developer Views
+│   │   │   └── page.tsx                # My tasks list
 │   │   ├── 📂 api/
-│   │   │   └── auth/session/         # Session proxy endpoint
+│   │   │   └── auth/                   # Session refresh endpoint
+│   │   ├── providers.tsx               # Auth context provider
+│   │   ├── globals.css
 │   │   └── layout.tsx
-│   ├── 📂 components/                # Reusable UI components
-│   ├── 📂 lib/
-│   │   ├── fetcher.ts                # API client
-│   │   ├── auth-manager.ts           # Auth state management
-│   │   └── token-manager.ts          # Token handling
-│   └── 📂 public/
+│   ├── 📂 components/
+│   │   ├── AuthForm.tsx                # Login/Register form
+│   │   ├── ProtectedClientWrapper.tsx  # Route protection
+│   │   └── ui/                         # shadcn/ui components
+│   ├── 📂 lib/                         # Core Logic
+│   │   ├── auth.ts                     # Auth context & hooks
+│   │   ├── fetcher.ts                  # API client with auto-refresh
+│   │   ├── tokenManager.ts             # Token storage & retrieval
+│   │   ├── hooks/                      # Custom React hooks
+│   │   └── utils.ts                    # Helper functions
+│   ├── 📄 package.json
+│   ├── 📄 tsconfig.json
+│   └── 📄 .env.local
 │
-└── 📂 project-management-api/        # FastAPI Backend
+└── 📂 project-management-api/          # FastAPI Backend
     ├── 📂 app/
-    │   ├── 📂 routers/               # API endpoints
+    │   ├── 📄 main.py                  # Application entry point
+    │   ├── 📄 config.py                # Environment configuration
+    │   ├── 📄 database.py              # Async DB setup
+    │   ├── 📂 models/                  # SQLAlchemy Models
+    │   │   ├── user.py
+    │   │   ├── project.py
+    │   │   ├── task.py
+    │   │   └── session.py
+    │   ├── 📂 schemas/                 # Pydantic Schemas
+    │   │   ├── user.py
+    │   │   ├── project.py
+    │   │   ├── task.py
+    │   │   └── auth.py
+    │   ├── 📂 routers/                 # API Routes
     │   │   ├── auth.py
     │   │   ├── users.py
     │   │   ├── projects.py
     │   │   ├── tasks.py
     │   │   └── stats.py
-    │   ├── 📂 services/              # Business logic
-    │   │   ├── session_service.py
+    │   ├── 📂 services/                # Business Logic
     │   │   ├── auth_service.py
-    │   │   └── user_service.py
-    │   ├── 📂 utils/                 # Helper functions
-    │   │   ├── jwt.py
-    │   │   ├── hashing.py
-    │   │   ├── pagination.py
-    │   │   └── device.py
-    │   ├── 📂 models/                # SQLAlchemy models
-    │   ├── 📂 schemas/               # Pydantic schemas
-    │   ├── database.py               # DB configuration
-    │   ├── config.py                 # Environment settings
-    │   └── main.py                   # Application entry
-    ├── 📂 alembic/                   # Database migrations
+    │   │   ├── user_service.py
+    │   │   ├── project_service.py
+    │   │   └── session_service.py
+    │   └── 📂 utils/                   # Utilities
+    │       ├── jwt.py                  # Token generation
+    │       ├── device.py               # Device detection
+    │       ├── permissions.py          # RBAC helpers
+    │       └── pagination.py           # Query pagination
+    ├── 📂 alembic/                     # Database Migrations
     ├── 📂 scripts/
-    │   └── seed_admin.py             # Admin user seeder
-    ├── requirements.txt
-    ├── .env
-    └── docker-compose.yml
+    │   └── seed_admin.py               # Admin user seeder
+    ├── 📄 requirements.txt
+    ├── 📄 docker-compose.yml
+    ├── 📄 .env
+    └── 📄 README.md
 ```
 
 ---
@@ -105,10 +180,12 @@ Project-Management/
 
 ### Prerequisites
 
-- Python 3.11+
-- Node.js 18+
-- Docker & Docker Compose
-- PostgreSQL (via Docker)
+```bash
+Python 3.11+
+Node.js 18+
+Docker & Docker Compose
+Git
+```
 
 ### 1️⃣ Clone the Repository
 
@@ -137,6 +214,11 @@ services:
       POSTGRES_DB: taskflow
     ports:
       - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
 ```
 
 ### 3️⃣ Setup Backend
@@ -145,287 +227,360 @@ services:
 # Install dependencies
 pip install -r requirements.txt
 
-# Configure environment variables
+# Create environment file
 cp .env.example .env
-# Edit .env with your settings
+```
 
-# Run database migrations
+**Configure .env:**
+```env
+# Database
+DATABASE_URL=postgresql+asyncpg://lakshan:root@localhost:5432/taskflow
+
+# Security
+SECRET_KEY=your_super_secret_key_change_this_in_production_minimum_32_characters
+ALGORITHM=HS256
+
+# Access token expires in memory (no expiry stored)
+# Refresh token valid for 7 days
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+REFRESH_TOKEN_EXPIRE_DAYS=7
+```
+
+```bash
+# Run migrations
 alembic upgrade head
 
 # Seed admin user
 python scripts/seed_admin.py
 
-# Start the API server
+# Start server
 uvicorn app.main:app --reload
 ```
 
-**Backend Environment (.env):**
-```env
-DATABASE_URL=postgresql+asyncpg://lakshan:root@localhost:5432/taskflow
-SECRET_KEY=your_super_secret_key_change_this_in_production
-ALGORITHM=HS256
-```
-
-🎉 **Backend running at:** [http://localhost:8000](http://localhost:8000)  
-📚 **API Documentation:** [http://localhost:8000/docs](http://localhost:8000/docs)
+✅ **Backend running at:** [http://localhost:8000](http://localhost:8000)  
+📚 **API Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)  
+📖 **ReDoc:** [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
 ### 4️⃣ Setup Frontend
 
 ```bash
-cd my-saas-frontend
+cd ../my-saas-frontend
 
 # Install dependencies
 npm install
 
-# Configure environment variables
+# Create environment file
 cp .env.local.example .env.local
-# Edit .env.local with your settings
-
-# Start the development server
-npm run dev
 ```
 
-**Frontend Environment (.env.local):**
+**Configure .env.local:**
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-🎨 **Frontend running at:** [http://localhost:3000](http://localhost:3000)
+```bash
+# Start development server
+npm run dev
+```
+
+✅ **Frontend running at:** [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## 🔑 Default Credentials
-
-After running the admin seeder:
+## 🔑 Default Admin Credentials
 
 ```
-Email:    admin@example.com
-Password: admin123
+📧 Email:    admin@example.com
+🔒 Password: admin123
 ```
 
-> ⚠️ **Important:** Change these credentials immediately in production!
+> ⚠️ **Security Warning:** Change these credentials immediately in production!
 
 ---
 
-## 🎨 Features Breakdown
+## 📡 API Reference
 
-### 🔐 Authentication & Security
+### 🔐 Authentication
 
-- **Timeless Access Tokens** - Short-lived, memory-only tokens
-- **Refresh Token Rotation** - Enhanced security through token rotation
-- **Session Tracking** - Multi-device session management with device detection
-- **Password Hashing** - bcrypt-based secure password storage
-- **Role-Based Access Control** - Three-tier permission system
-
-### 👥 User Management
-
-```python
-# Roles
-- Admin     → Full system access
-- Manager   → Project ownership and team management
-- Developer → Task execution on assigned projects
-```
-
-- User CRUD operations
-- Search and pagination
-- Profile management
-- Activity tracking
-
-### 📊 Project Management
-
-- Create, read, update, delete projects
-- Owner-based access for managers
-- Assignment-based access for developers
-- Advanced filtering (search, date ranges, status)
-- Project statistics and insights
-
-### ✅ Task Management
-
-- Full CRUD functionality
-- Status workflow (Todo → In Progress → Done)
-- Task assignment and tracking
-- Priority levels
-- Due date management
-
-### 📈 Dashboard & Analytics
-
-- Task breakdown by status
-- Overdue task counters
-- Active session monitoring
-- New user metrics (last 30 days)
-- Project completion rates
-
----
-
-## 🏗️ Architecture Highlights
-
-### Frontend Architecture
-
-```typescript
-// Client-side authentication pattern
-// Access token: In-memory only
-// Refresh token: localStorage
-// Session ID: localStorage
-
-// Rehydration on page refresh
-app → /auth/refresh → validates session → restores state
-```
-
-**Key Design Decisions:**
-- **No SSR Authentication** - Prevents hydration mismatches
-- **Memory-only Access Tokens** - XSS protection
-- **localStorage Refresh Tokens** - Persistent sessions
-- **Empty Middleware** - Client-side auth flow
-
-### Backend Architecture
-
-```python
-# Async-first design
-async def get_projects(
-    db: AsyncSession,
-    user: User,
-    skip: int = 0,
-    limit: int = 10
-) -> list[Project]:
-    # Role-based filtering
-    # Pagination
-    # Optimized queries
-    ...
-```
-
-**Key Features:**
-- Async SQLAlchemy sessions
-- Service layer separation
-- Pydantic validation
-- JWT stateless authentication
-- RESTful API design
-
----
-
-## 📡 API Endpoints
-
-### Authentication
 ```http
-POST   /auth/register          # Create new user
+POST   /auth/register          # Create new account
 POST   /auth/login             # Login and get tokens
 POST   /auth/refresh           # Refresh access token
 POST   /auth/logout            # Logout current session
-POST   /auth/logout-all        # Logout all sessions
+POST   /auth/logout-all        # Logout all devices
 GET    /auth/sessions          # List active sessions
+DELETE /auth/sessions/{id}     # Delete specific session
 ```
 
-### Users
+**Example Login Request:**
+```bash
+curl -X POST http://localhost:8000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@example.com",
+    "password": "admin123"
+  }'
+```
+
+### 👥 Users (Admin Only)
+
 ```http
 GET    /users                  # List all users (paginated)
-GET    /users/{id}             # Get user by ID
-POST   /users                  # Create user (admin)
+GET    /users/{id}             # Get user details
 PUT    /users/{id}             # Update user
-DELETE /users/{id}             # Delete user
-GET    /users/search           # Search users
+PATCH  /users/{id}/disable     # Disable user (soft delete)
+GET    /users/search?q=john    # Search users
 ```
 
-### Projects
+### 📁 Projects (Manager + Admin)
+
 ```http
-GET    /projects               # List projects
+GET    /projects               # List projects (role-filtered)
+POST   /projects               # Create new project (Manager)
 GET    /projects/{id}          # Get project details
-POST   /projects               # Create project
-PUT    /projects/{id}          # Update project
-DELETE /projects/{id}          # Delete project
+PUT    /projects/{id}          # Update project (Owner only)
+DELETE /projects/{id}          # Delete project (Owner only)
 GET    /projects/search        # Search projects
 ```
 
-### Tasks
-```http
-GET    /tasks                  # List tasks
-GET    /tasks/{id}             # Get task details
-POST   /tasks                  # Create task
-PUT    /tasks/{id}             # Update task
-DELETE /tasks/{id}             # Delete task
-PATCH  /tasks/{id}/status      # Update task status
+**Example Create Project:**
+```json
+{
+  "name": "TaskFlow Redesign",
+  "description": "Modern UI overhaul",
+  "status": "active",
+  "start_date": "2025-01-01",
+  "end_date": "2025-06-30"
+}
 ```
 
-### Statistics
+### 📌 Tasks (Manager & Developer)
+
 ```http
-GET    /stats/dashboard        # Get dashboard statistics
-GET    /stats/tasks            # Task analytics
-GET    /stats/projects         # Project analytics
+POST   /tasks                  # Create task (Manager)
+GET    /tasks                  # List tasks (role-filtered)
+GET    /tasks/{id}             # Get task details
+PUT    /tasks/{id}             # Update task
+PATCH  /tasks/{id}/status      # Update status (Developer)
+DELETE /tasks/{id}             # Delete task (Manager)
 ```
+
+**Task Status Flow:**
+```
+todo → in_progress → done
+```
+
+### 📊 Statistics
+
+```http
+GET    /stats/dashboard        # Dashboard overview
+GET    /stats/tasks            # Task analytics
+GET    /stats/projects         # Project metrics
+```
+
+---
+
+## 🏗️ Architecture Decisions
+
+### Frontend Authentication Pattern
+
+```typescript
+// Memory-only access token (XSS protection)
+const accessToken = useAuthStore(state => state.accessToken);
+
+// Persistent storage for refresh
+localStorage.setItem('refreshToken', token);
+localStorage.setItem('sessionId', id);
+
+// Auto-refresh with backendFetch
+const response = await backendFetch('/api/endpoint', {
+  method: 'GET',
+  // Automatically adds: Authorization: Bearer {accessToken}
+  // Automatically refreshes on 401
+});
+```
+
+**Key Benefits:**
+- ✅ No hydration mismatches (pure client-side)
+- ✅ XSS protection (access token never in localStorage)
+- ✅ Automatic token refresh
+- ✅ Clean error handling
+- ✅ Type-safe responses
+
+### Backend Service Layer Pattern
+
+```python
+# Service layer handles business logic
+class ProjectService:
+    @staticmethod
+    async def create_project(
+        db: AsyncSession,
+        project_data: ProjectCreate,
+        owner: User
+    ) -> Project:
+        # Validate permissions
+        if owner.role != Role.MANAGER:
+            raise HTTPException(403, "Only managers can create projects")
+        
+        # Business logic
+        project = Project(**project_data.dict(), owner_id=owner.id)
+        db.add(project)
+        await db.commit()
+        
+        return project
+```
+
+**Architecture Benefits:**
+- ✅ Separation of concerns
+- ✅ Testable business logic
+- ✅ Reusable across routes
+- ✅ Clear permission boundaries
+- ✅ Type-safe operations
 
 ---
 
 ## 🧪 Testing
 
 ### Backend Tests
+
 ```bash
 cd project-management-api
+
+# Run all tests
 pytest
+
+# Run with coverage
+pytest --cov=app tests/
+
+# Run specific test file
+pytest tests/test_auth.py -v
 ```
 
 ### Frontend Tests
+
 ```bash
 cd my-saas-frontend
+
+# Run tests
 npm run test
+
+# Run with coverage
+npm run test:coverage
+
+# Run in watch mode
+npm run test:watch
 ```
 
 ---
 
-## 🚢 Deployment
+## 🚢 Deployment Guide
 
-### Backend Deployment (Example: Railway/Render)
+### Backend Deployment (Railway/Render/Fly.io)
 
-1. Set environment variables in hosting platform
-2. Configure PostgreSQL database
-3. Run migrations: `alembic upgrade head`
-4. Start with: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+```bash
+# 1. Set environment variables
+DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/dbname
+SECRET_KEY=production_secret_min_32_chars
+ALGORITHM=HS256
 
-### Frontend Deployment (Example: Vercel/Netlify)
+# 2. Install dependencies
+pip install -r requirements.txt
 
-1. Connect repository to hosting platform
-2. Set `NEXT_PUBLIC_API_URL` environment variable
-3. Build command: `npm run build`
-4. Deploy!
+# 3. Run migrations
+alembic upgrade head
+
+# 4. Start with production server
+uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 4
+```
+
+### Frontend Deployment (Vercel/Netlify)
+
+```bash
+# 1. Set environment variable
+NEXT_PUBLIC_API_URL=https://your-backend-url.com
+
+# 2. Build
+npm run build
+
+# 3. Deploy (automatic on push with Vercel)
+```
+
+**Vercel Configuration (vercel.json):**
+```json
+{
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install"
+}
+```
+
+---
+
+## 📈 Roadmap & Future Enhancements
+
+- [ ] 🗂️ **File Attachments** - Upload documents to projects/tasks
+- [ ] 🏷️ **Labels & Tags** - Flexible categorization system
+- [ ] 🧵 **Task Comments** - Team collaboration & discussion
+- [ ] 🕒 **Activity Timeline** - Audit log for all changes
+- [ ] 📆 **Sprint Planning** - Agile workflow support
+- [ ] 🔍 **Global Search** - Search across projects/tasks/users
+- [ ] 📧 **Email Notifications** - Task assignments & updates
+- [ ] 📱 **Mobile App** - React Native companion
+- [ ] 🔔 **Real-time Updates** - WebSocket support
+- [ ] 📊 **Advanced Analytics** - Charts & insights
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please follow these steps:
+Contributions, issues, and feature requests are welcome!
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
+
+**Coding Standards:**
+- Python: Follow PEP 8
+- TypeScript: Use ESLint + Prettier
+- Write tests for new features
+- Update documentation
 
 ---
 
 ## 📄 License
 
-This project is part of an assessment and is available for educational purposes.
+This project is part of a technical assessment and is available for educational purposes.
 
 ---
 
-## 📞 Contact
+## 🧑‍💻 Author
 
-**Repository:** [https://github.com/lazymonarch/Project-Management_API](https://github.com/lazymonarch/Project-Management_API)
+**Lakshan** - Full-Stack Engineer
 
-**Author:** Lakshan ([@lazymonarch](https://github.com/lazymonarch))
+[![GitHub](https://img.shields.io/badge/GitHub-lazymonarch-181717?style=for-the-badge&logo=github)](https://github.com/lazymonarch)
+[![Repository](https://img.shields.io/badge/Repo-Project--Management__API-blue?style=for-the-badge&logo=github)](https://github.com/lazymonarch/Project-Management_API)
 
 ---
 
 ## 🙏 Acknowledgments
 
-- FastAPI for the incredible framework
-- Next.js team for App Router
-- shadcn for beautiful UI components
-- The open-source community
+- [FastAPI](https://fastapi.tiangolo.com/) - Modern Python web framework
+- [Next.js](https://nextjs.org/) - React framework for production
+- [shadcn/ui](https://ui.shadcn.com/) - Beautiful component library
+- [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS
+- [SQLAlchemy](https://www.sqlalchemy.org/) - Python SQL toolkit
 
 ---
 
 <div align="center">
 
-**⭐ Star this repo if you find it helpful!**
+### ⭐ Star this repo if you find it helpful!
 
-Made with ❤️ and ☕
+**Made with ❤️, caffeine, and way too many late nights**
+
+[Report Bug](https://github.com/lazymonarch/Project-Management_API/issues) · [Request Feature](https://github.com/lazymonarch/Project-Management_API/issues)
 
 </div>
