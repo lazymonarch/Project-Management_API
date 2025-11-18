@@ -6,7 +6,7 @@ from uuid import UUID
 from datetime import datetime
 
 from app.database import get_db
-from app.schemas.response import TaskBoardResponse, TaskListResponse
+from app.schemas.response import TaskBoardResponse, TaskListResponse, SuccessResponse 
 from app.schemas.task import (
     TaskCreate,
     TaskUpdate,
@@ -24,38 +24,47 @@ from app.utils.response import success
 router = APIRouter(
     prefix="/api/v1/tasks",
     tags=["Tasks"],
-    dependencies=[Depends(get_current_user)]   # 🔥 All routes protected globally
+    dependencies=[Depends(get_current_user)]
 )
 
 
 # -------------------------
 # CREATE TASK
 # -------------------------
-@router.post("/", response_model=TaskPublic)
+@router.post("/", response_model=SuccessResponse)
 async def create_task(
     data: TaskCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_roles(UserRole.admin, UserRole.manager))
 ):
     task = await TaskService.create_task(db, data, current_user)
-    return success("Task created successfully", task)
+    
+    # Manually convert to Pydantic model
+    task_data = TaskPublic.model_validate(task)
+    
+    return success("Task created successfully", task_data)
 
 
 # -------------------------
-# GET TASK BY ID
+# LIST TASKS FOR A PROJECT
 # -------------------------
-@router.get("/{task_id}", response_model=TaskPublic)
-async def get_task(
-    task_id: UUID,
+@router.get("/project/{project_id}", response_model=TaskListResponse)
+async def list_project_tasks(
+    project_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    task = await TaskService.get_task(db, task_id, current_user)
-    return success("Task details", task)
+    tasks = await TaskService.list_project_tasks(db, project_id, current_user)
+    
+    return {
+        "message": "Task list",
+        "data": tasks,
+        "pagination": None 
+    }
 
 
 # -------------------------
-# LIST TASKS (FILTER + SEARCH + PAGINATION)
+# LIST TASKS (FILTER + SEARCH)
 # -------------------------
 @router.get("/", response_model=TaskListResponse)
 async def list_tasks(
@@ -85,44 +94,29 @@ async def list_tasks(
         current_user=current_user
     )
 
-    return success("Task list", {
+    return {
+        "message": "Task list",
         "data": tasks,
         "pagination": pagination
-    })
-
+    }
 
 # -------------------------
-# LIST TASKS FOR A PROJECT (NO PAGINATION)
+# GET TASK
 # -------------------------
-@router.get("/project/{project_id}", response_model=TaskListResponse)
-async def list_project_tasks(
-    project_id: UUID,
+@router.get("/{task_id}", response_model=SuccessResponse) 
+async def get_task(
+    task_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    tasks = await TaskService.list_project_tasks(db, project_id, current_user)
-    serialized = [TaskPublic.model_validate(t) for t in tasks]
-    return success("Task list", serialized)
-
-
-# -------------------------
-# UPDATE TASK
-# -------------------------
-@router.patch("/{task_id}", response_model=TaskPublic)
-async def update_task(
-    task_id: UUID,
-    data: TaskUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_roles(UserRole.admin, UserRole.manager))
-):
-    task = await TaskService.update_task(db, task_id, data, current_user)
-    return success("Task updated successfully", task)
-
+    task = await TaskService.get_task(db, task_id, current_user)
+    task_data = TaskPublic.model_validate(task)
+    return success("Task details", task_data)
 
 # -------------------------
-# UPDATE STATUS ONLY
+# UPDATE STATUS
 # -------------------------
-@router.patch("/{task_id}/status", response_model=TaskPublic)
+@router.patch("/{task_id}/status", response_model=SuccessResponse) 
 async def update_task_status(
     task_id: UUID,
     data: TaskStatusUpdate,
@@ -130,13 +124,27 @@ async def update_task_status(
     current_user: User = Depends(get_current_user)
 ):
     task = await TaskService.update_status(db, task_id, data.status, current_user)
-    return success("Task status updated", task)
+    task_data = TaskPublic.model_validate(task)
+    return success("Task status updated", task_data)
 
+# -------------------------
+# UPDATE TASK
+# -------------------------
+@router.patch("/{task_id}", response_model=SuccessResponse) 
+async def update_task(
+    task_id: UUID,
+    data: TaskUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_roles(UserRole.admin, UserRole.manager))
+):
+    task = await TaskService.update_task(db, task_id, data, current_user)
+    task_data = TaskPublic.model_validate(task)
+    return success("Task updated successfully", task_data)
 
 # -------------------------
 # DELETE TASK
 # -------------------------
-@router.delete("/{task_id}", response_model=TaskPublic)
+@router.delete("/{task_id}", response_model=SuccessResponse) 
 async def delete_task(
     task_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -144,23 +152,3 @@ async def delete_task(
 ):
     await TaskService.delete_task(db, task_id, current_user)
     return success("Task deleted successfully")
-
-
-# -------------------------
-# TASK BOARD (KANBAN)
-# -------------------------
-@router.get("/board", response_model=TaskBoardResponse)
-async def task_board(
-    project_id: UUID,
-    assigned_to: UUID | None = Query(None),
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    board = await TaskService.get_task_board(
-        db=db,
-        project_id=project_id,
-        current_user=current_user,
-        assigned_to=assigned_to
-    )
-
-    return success("Task board", board)

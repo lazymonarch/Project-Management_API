@@ -150,9 +150,10 @@ class TaskResponse(BaseModel):
 class TaskListItem(BaseModel):
     id: UUID
     title: str
-    status: TaskStatus
-    priority: TaskPriority
+    status: str 
+    priority: str
     project_id: UUID
+    assigned_to: Optional[UUID] = None 
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -160,7 +161,7 @@ class TaskListItem(BaseModel):
 class TaskListResponse(BaseModel):
     message: str
     data: List[TaskListItem]
-    pagination: Pagination
+    pagination: Optional[Pagination] = None
 
 
 class TaskBoardColumn(BaseModel):

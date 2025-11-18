@@ -1,8 +1,9 @@
 # app/schemas/task.py
 from uuid import UUID
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict 
 from datetime import datetime
 from app.models.enums import TaskPriority, TaskStatus
+from typing import Optional
 
 
 class TaskCreate(BaseModel):
@@ -43,5 +44,4 @@ class TaskPublic(BaseModel):
     created_at: datetime
     updated_at: datetime | None
 
-    class Config:
-        json_encoders = {UUID: lambda v: str(v)}
+    model_config = ConfigDict(from_attributes=True)
