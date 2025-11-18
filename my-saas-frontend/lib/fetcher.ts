@@ -51,13 +51,10 @@ export async function backendFetch<T = unknown>(
   options: RequestInit = {},
   retryCount = 0
 ): Promise<T> {
-  // On first call, try to rehydrate access token if in memory is null
-  if (retryCount === 0) {
-    const accessToken = getAccessToken();
-    if (!accessToken) {
-      await rehydrateAccessToken();
-    }
-  }
+  
+  // ⛔️ FIX: REMOVED THE BLOCK THAT CAUSED THE CIRCULAR DEPENDENCY ⛔️
+  // The ProtectedClientWrapper is responsible for rehydration,
+  // not this function.
 
   const accessToken = getAccessToken();
   const headers = new Headers(options.headers || {});

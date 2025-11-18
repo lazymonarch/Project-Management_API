@@ -5,7 +5,23 @@ import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { api, getToken } from "@/lib/api";
+import { backendFetch } from "@/lib/fetcher";
+
+// ✅ FIX: Define the types for the project and the API response
+interface Project {
+  id: string;
+  name: string;
+  status: string;
+  // Based on your backend schema, the project list response
+  // does not include the full owner details.
+  owner_id: string; 
+}
+
+interface ProjectListResponse {
+  message: string;
+  data: Project[];
+  pagination: any;
+}
 
 export default function ManageProjectsPage() {
   const router = useRouter();
@@ -15,10 +31,12 @@ export default function ManageProjectsPage() {
     isLoading,
     error,
     refetch
-  } = useQuery({
+    // ✅ FIX: Pass the response type to useQuery
+  } = useQuery<ProjectListResponse>({
     queryKey: ["projects"],
     queryFn: async () => {
-      return api.get("/api/v1/projects", getToken());
+      // ✅ FIX: Pass the response type to backendFetch
+      return backendFetch<ProjectListResponse>("/projects");
     },
   });
 
@@ -41,21 +59,24 @@ export default function ManageProjectsPage() {
             <tr className="border-b">
               <th className="p-3">Name</th>
               <th className="p-3">Status</th>
-              <th className="p-3">Owner</th>
+              <th className="p-3">Owner ID</th>
               <th className="p-3">Actions</th>
             </tr>
           </thead>
 
           <tbody>
-            {data?.data?.map((p: any) => (
+            {/* data is now correctly typed as ProjectListResponse | undefined */}
+            {data?.data?.map((p: Project) => ( // ✅ FIX: Use the Project type
               <tr key={p.id} className="border-b">
                 <td className="p-3">{p.name}</td>
 
                 <td className="p-3">
                   <Badge className="capitalize">{p.status}</Badge>
                 </td>
-
-                <td className="p-3">{p.owner?.full_name ?? "Unknown"}</td>
+                
+                {/* Your backend's list-projects endpoint returns 'owner_id'
+                    not the full owner object. Displaying the ID is correct. */}
+                <td className="p-3 text-xs font-mono">{p.owner_id}</td>
 
                 <td className="p-3 space-x-3">
                   <Button variant="secondary"
@@ -71,7 +92,7 @@ export default function ManageProjectsPage() {
 
                   <Button variant="destructive"
                     onClick={async () => {
-                      await api.delete(`/api/v1/projects/${p.id}`, getToken());
+                      await backendFetch(`/projects/${p.id}`, { method: "DELETE" });
                       refetch();
                     }}
                   >

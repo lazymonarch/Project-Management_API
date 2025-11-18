@@ -5,8 +5,22 @@ import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { getToken, api } from "@/lib/api"; // your wrapper
+import { backendFetch } from "@/lib/fetcher"; 
 import { Badge } from "@/components/ui/badge";
+
+// ✅ FIX: Define the types for the user and the API response
+interface User {
+  id: string;
+  full_name: string;
+  email: string;
+  role: string;
+}
+
+interface UserListResponse {
+  message: string;
+  data: User[];
+  pagination: any; // We don't need to type pagination for this
+}
 
 export default function ManageUsersPage() {
   const router = useRouter();
@@ -16,11 +30,12 @@ export default function ManageUsersPage() {
     isLoading,
     error,
     refetch
-  } = useQuery({
+    // ✅ FIX: Pass the response type to useQuery
+  } = useQuery<UserListResponse>({
     queryKey: ["users"],
     queryFn: async () => {
-      const token = getToken();
-      return api.get("/api/v1/users", token);
+      // ✅ FIX: Pass the response type to backendFetch
+      return backendFetch<UserListResponse>("/users"); 
     },
   });
 
@@ -43,7 +58,8 @@ export default function ManageUsersPage() {
           </thead>
 
           <tbody>
-            {data?.data?.map((u: any) => (
+            {/* data is now correctly typed as UserListResponse | undefined */}
+            {data?.data?.map((u: User) => ( // ✅ FIX: Use the User type
               <tr key={u.id} className="border-b">
                 <td className="p-3">{u.full_name}</td>
                 <td className="p-3">{u.email}</td>
@@ -61,7 +77,7 @@ export default function ManageUsersPage() {
                   <Button
                     variant="destructive"
                     onClick={async () => {
-                      await api.delete(`/api/v1/users/${u.id}`, getToken());
+                      await backendFetch(`/users/${u.id}`, { method: "DELETE" });
                       refetch();
                     }}
                   >
