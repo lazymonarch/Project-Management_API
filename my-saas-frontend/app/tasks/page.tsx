@@ -1,12 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation"; 
+import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ProtectedClientWrapper } from "@/components/ProtectedClientWrapper";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button"; 
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft } from "lucide-react"; 
+import { ArrowLeft } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -25,10 +25,9 @@ interface Task {
 }
 
 export default function MyTasksPage() {
-  const router = useRouter(); 
+  const router = useRouter();
   const queryClient = useQueryClient();
 
-  // Fetch tasks assigned to the current user
   const { data: response, isLoading } = useQuery({
     queryKey: ["my-tasks"],
     queryFn: async () => backendFetch<{ data: Task[] }>("/tasks"),
@@ -36,7 +35,6 @@ export default function MyTasksPage() {
 
   const tasks = response?.data || [];
 
-  // Mutation to update status
   const statusMutation = useMutation({
     mutationFn: async ({ taskId, status }: { taskId: string; status: string }) => {
       return backendFetch(`/tasks/${taskId}/status`, {

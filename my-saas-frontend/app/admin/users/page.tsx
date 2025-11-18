@@ -4,9 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { backendFetch } from "@/lib/fetcher"; 
+import { backendFetch } from "../../../lib/fetcher"; 
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft } from "lucide-react"; 
+import { ArrowLeft } from "lucide-react";
 
 interface User {
   id: string;

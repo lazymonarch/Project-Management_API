@@ -1,4 +1,4 @@
-import { getAccessToken, rehydrateAccessToken } from "./tokenManager";
+import { getAccessToken } from "./tokenManager"; 
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -8,7 +8,7 @@ let refreshPromise: Promise<boolean> | null = null;
 
 function buildUrl(path: string) {
   const prefix = "/api/v1";
-  // Ensure path starts with /
+  // Ensure path starts with / and remove double slashes if any
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
   return `${API_BASE_URL}${prefix}${cleanPath}`;
 }
@@ -82,9 +82,25 @@ export async function backendFetch<T = unknown>(
     }
 
     if (!response.ok) {
-      const error = new Error(
-        data?.detail || data?.message || response.statusText || "Request failed"
-      );
+      let errorMessage = response.statusText || "Request failed";
+
+      if (data) {
+        if (typeof data.detail === "string") {
+          errorMessage = data.detail;
+        } else if (Array.isArray(data.detail)) {
+          // Handle Pydantic validation array
+          errorMessage = data.detail
+            .map((e: any) => `${e.loc ? e.loc.join('.') : 'Error'}: ${e.msg}`)
+            .join(", ");
+        } else if (data.message) {
+          errorMessage = data.message;
+        } else {
+           // Fallback for unknown objects: convert to string to see the error
+           errorMessage = JSON.stringify(data);
+        }
+      }
+
+      const error = new Error(errorMessage);
       (error as any).status = response.status;
       (error as any).data = data;
       throw error;
@@ -92,7 +108,6 @@ export async function backendFetch<T = unknown>(
 
     return data as T;
   } catch (error: any) {
-    // Log the real network error to console for debugging
     console.error("BackendFetch Error:", error);
     throw error;
   }

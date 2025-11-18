@@ -120,7 +120,7 @@ export default function ManagerProjectPage() {
   }, [project, resetProjectForm]);
 
 
-  // 2. Fetch Tasks
+  // 2. Fetch Tasks (Always List View)
   const { data: tasksRes } = useQuery({
     queryKey: ["project-tasks", id],
     queryFn: async () => backendFetch<{ data: Task[] }>(`/tasks/project/${id}`),
@@ -198,7 +198,6 @@ export default function ManagerProjectPage() {
     <ProtectedClientWrapper requiredRole="manager">
       {() => (
         <div className="p-8 space-y-8 max-w-5xl mx-auto">
-          {/* Header */}
           <div className="flex items-center justify-between">
             <Button variant="ghost" className="pl-0 gap-2" onClick={() => router.back()}>
               <ArrowLeft className="h-4 w-4" /> Back
@@ -223,10 +222,10 @@ export default function ManagerProjectPage() {
                 </span>
              </div>
           </div>
-
           <div className="space-y-4">
             <div className="flex justify-between items-center">
                 <h2 className="text-xl font-semibold">Tasks</h2>
+
                 <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
                     <DialogTrigger asChild>
                         <Button><Plus className="h-4 w-4 mr-2" /> Add Task</Button>
@@ -278,32 +277,37 @@ export default function ManagerProjectPage() {
             ) : (
                 <div className="grid gap-4">
                     {tasks.map((task) => (
-                        <Card key={task.id} className="p-4 flex justify-between items-center">
+                        <Card key={task.id} className="p-4 flex justify-between items-center shadow-sm hover:shadow-md transition">
                             <div>
-                                <p className="font-medium">{task.title}</p>
+                                <p className="font-medium text-lg">{task.title}</p>
                                 <div className="flex gap-2 mt-1">
                                     <Badge variant="outline" className="text-xs capitalize">{task.status.replace('_', ' ')}</Badge>
-                                    <Badge variant="secondary" className="text-xs capitalize">{task.priority}</Badge>
+                                    <Badge 
+                                        variant={task.priority === 'critical' ? 'destructive' : 'secondary'} 
+                                        className="text-xs capitalize"
+                                    >
+                                        {task.priority}
+                                    </Badge>
                                 </div>
                             </div>
+                            <span className="text-xs text-slate-400 font-mono">ID: {task.id.slice(0, 4)}</span>
                         </Card>
                     ))}
                 </div>
             )}
           </div>
-
           <Card className="p-6 shadow-sm bg-slate-50 mt-10">
             <h3 className="text-lg font-semibold mb-4">Project Settings</h3>
             <form onSubmit={handleProjectSubmit(onProjectSave)} className="space-y-4 max-w-xl">
                 
                 <div className="space-y-2">
                     <Label>Name</Label>
-                    <Input {...registerProject("name")} />
+                    <Input defaultValue={project.name} {...registerProject("name")} />
                 </div>
 
                 <div className="space-y-2">
                     <Label>Description</Label>
-                    <Input {...registerProject("description")} />
+                    <Input defaultValue={project.description} {...registerProject("description")} />
                 </div>
 
                 <div className="space-y-2">
@@ -327,11 +331,11 @@ export default function ManagerProjectPage() {
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label>Start Date</Label>
-                        <Input type="date" {...registerProject("start_date")} />
+                        <Input type="date" defaultValue={formatDate(project.start_date)} {...registerProject("start_date")} />
                     </div>
                     <div className="space-y-2">
                         <Label>End Date</Label>
-                        <Input type="date" {...registerProject("end_date")} />
+                        <Input type="date" defaultValue={formatDate(project.end_date)} {...registerProject("end_date")} />
                     </div>
                 </div>
 

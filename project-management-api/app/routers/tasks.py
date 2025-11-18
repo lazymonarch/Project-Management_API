@@ -6,7 +6,7 @@ from uuid import UUID
 from datetime import datetime
 
 from app.database import get_db
-from app.schemas.response import TaskBoardResponse, TaskListResponse, SuccessResponse 
+from app.schemas.response import TaskBoardResponse, TaskListResponse, SuccessResponse
 from app.schemas.task import (
     TaskCreate,
     TaskUpdate,
@@ -38,10 +38,7 @@ async def create_task(
     current_user: User = Depends(require_roles(UserRole.admin, UserRole.manager))
 ):
     task = await TaskService.create_task(db, data, current_user)
-    
-    # Manually convert to Pydantic model
     task_data = TaskPublic.model_validate(task)
-    
     return success("Task created successfully", task_data)
 
 
@@ -103,7 +100,7 @@ async def list_tasks(
 # -------------------------
 # GET TASK
 # -------------------------
-@router.get("/{task_id}", response_model=SuccessResponse) 
+@router.get("/{task_id}", response_model=SuccessResponse)
 async def get_task(
     task_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -116,7 +113,7 @@ async def get_task(
 # -------------------------
 # UPDATE STATUS
 # -------------------------
-@router.patch("/{task_id}/status", response_model=SuccessResponse) 
+@router.patch("/{task_id}/status", response_model=SuccessResponse)
 async def update_task_status(
     task_id: UUID,
     data: TaskStatusUpdate,
@@ -130,7 +127,7 @@ async def update_task_status(
 # -------------------------
 # UPDATE TASK
 # -------------------------
-@router.patch("/{task_id}", response_model=SuccessResponse) 
+@router.patch("/{task_id}", response_model=SuccessResponse)
 async def update_task(
     task_id: UUID,
     data: TaskUpdate,
@@ -144,7 +141,7 @@ async def update_task(
 # -------------------------
 # DELETE TASK
 # -------------------------
-@router.delete("/{task_id}", response_model=SuccessResponse) 
+@router.delete("/{task_id}", response_model=SuccessResponse)
 async def delete_task(
     task_id: UUID,
     db: AsyncSession = Depends(get_db),
