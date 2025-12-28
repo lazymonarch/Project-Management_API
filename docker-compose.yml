@@ -1,0 +1,44 @@
+version: '3.9'
+services:
+  db:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: lakshan
+      POSTGRES_PASSWORD: lakshan1705
+      POSTGRES_DB: taskflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./project-management-api
+    container_name: project-management-api
+    env_file:
+      - ./project-management-api/.env
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    volumes:
+      - ./project-management-api:/app
+
+  frontend:
+    build:
+      context: ./my-saas-frontend
+    container_name: my-saas-frontend
+    env_file:
+      - ./my-saas-frontend/.env.local
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    command: npm run dev
+    volumes:
+      - ./my-saas-frontend:/app
+
+volumes:
+  pgdata:
